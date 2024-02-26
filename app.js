@@ -8,6 +8,7 @@ var FileStore = require('session-file-store')(session);
 
 var passport = require('passport');
 var authenticate = require('./authenticate');
+var config = require('./config');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -42,20 +43,20 @@ app.use(passport.session());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-function auth(req, res, next) {
-  console.log(req.user);
+// function auth(req, res, next) {
+//   console.log(req.user);
 
-  if (!req.user) {
-    var err = new Error('You are not authenticated!');
-    err.status = 403;
-    next(err);
-  }
-  else {
-    next();
-  }
-}
+//   if (!req.user) {
+//     var err = new Error('You are not authenticated!');
+//     err.status = 403;
+//     next(err);
+//   }
+//   else {
+//     next();
+//   }
+// }
 
-app.use(auth);
+// app.use(auth);
 
 app.use('/dishes', dishRouter);
 app.use('/promotions', promoRouter);
@@ -69,14 +70,12 @@ const Promotions = require('./models/promotions');
 const Leader = require('./models/leaders');
 const Cakes = require('./models/cakes');
 
-const url = 'mongodb://localhost:27017/confusion';
+const url = config.mongoUrl;
 const connect = mongoose.connect(url);
 
 connect.then((db) => {
   console.log("Connected correctly to server");
 }, (err) => { console.log(err); })
-
-
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
