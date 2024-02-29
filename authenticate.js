@@ -10,7 +10,7 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-exports.getToken = function(user) {
+exports.getToken = function (user) {
     return jwt.sign(user, config.secretKey, { expiresIn: 3600 });
 };
 
@@ -35,3 +35,44 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts,
     }));
 
 exports.verifyUser = passport.authenticate('jwt', { session: false });
+
+exports.verifyAdmin = function (req, res, next) {
+    if (req.user && req.user.admin) {
+        next();
+    } else {
+        var err = new Error('You are not authorized to perform this operation!');
+        err.status = 403; // Forbidden
+        return next(err);
+    }
+};
+
+exports.verifyCommentOwnership = async function (req, res, next) {
+    try {
+        // Extract the user's ID from req.user and comment ID from req.params
+        const userId = req.user._id; // Assuming req.user contains the authenticated user's information
+        const commentId = req.params.commentId;
+
+        // Fetch the comment from the database
+        const comment = await Comment.findById(commentId);
+
+        // Check if the comment exists
+        if (!comment) {
+            const err = new Error('Comment not found');
+            err.status = 404;
+            throw err;
+        }
+
+        // Check if the user performing the operation is the same as the comment's author
+        if (!comment.author.equals(userId)) {
+            const err = new Error('You are not authorized to perform this operation');
+            err.status = 403; // Forbidden
+            throw err;
+        }
+
+        // If the user is authorized, call next() to pass control to the next middleware
+        next();
+    } catch (err) {
+        // Handle errors
+        next(err);
+    }
+};
